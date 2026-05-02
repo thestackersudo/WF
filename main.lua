@@ -1,47 +1,535 @@
---[[ Protected by Lua Guard ]]
+-- I fucking hate key systems
+-- https://discord.gg/hJCn7UnkVZ
 
-( function (...) local Fluent = loadstring(game:HttpGet("\104\116\116\112\115\058\047\047\103\105\116\104\117\098\046\099\111\109\047\100\097\119\105\100\045\115\099\114\105\112\116\115\047\070\108\117\101\110\116\047\114\101\108\101\097\115\101\115\047\108\097\116\101\115\116\047\100\111\119\110\108\111\097\100\047\109\097\105\110\046\108\117\097"))() local SaveManager = loadstring(game:HttpGet("\104\116\116\112\115\058\047\047\114\097\119\046\103\105\116\104\117\098\117\115\101\114\099\111\110\116\101\110\116\046\099\111\109\047\100\097\119\105\100\045\115\099\114\105\112\116\115\047\070\108\117\101\110\116\047\109\097\115\116\101\114\047\065\100\100\111\110\115\047\083\097\118\101\077\097\110\097\103\101\114\046\108\117\097"))() local InterfaceManager = loadstring(game:HttpGet("\104\116\116\112\115\058\047\047\114\097\119\046\103\105\116\104\117\098\117\115\101\114\099\111\110\116\101\110\116\046\099\111\109\047\100\097\119\105\100\045\115\099\114\105\112\116\115\047\070\108\117\101\110\116\047\109\097\115\116\101\114\047\065\100\100\111\110\115\047\073\110\116\101\114\102\097\099\101\077\097\110\097\103\101\114\046\108\117\097"))() local Window = Fluent:CreateWindow({ Title = "\080\108\105\110\107\032\087\111\114\108\100\032\070\105\103\104\116\101\114\115", SubTitle = "\098\121\032\119\104\111\063", TabWidth = 0xA0, Transparency = false, Size = UDim2.fromOffset(0x244, 0x1CC), Acrylic = false, Theme = "\068\097\114\107", MinimizeKey = Enum.KeyCode.LeftControl }) local Tabs = { Main = Window:AddTab({ Title = "\077\097\105\110", Icon = "\104\111\109\101" }), AutoFarm = Window:AddTab({ Title = "\065\117\116\111\032\070\097\114\109", Icon = "\102\097\115\116\045\102\111\114\119\097\114\100" }), Raid = Window:AddTab({ Title = "\082\097\105\100\115", Icon = "\102\097\115\116\045\102\111\114\119\097\114\100" }), Stars = Window:AddTab({ Title = "\083\116\097\114\115", Icon = "\102\097\115\116\045\102\111\114\119\097\114\100" }), Gacha = Window:AddTab({ Title = "\071\097\099\104\097", Icon = "\102\097\115\116\045\102\111\114\119\097\114\100" }), Unit = Window:AddTab({ Title = "\085\110\105\116\115\032\047\032\087\101\097\112\111\110\115", Icon = "\102\097\115\116\045\102\111\114\119\097\114\100" }), Settings = Window:AddTab({ Title = "\083\101\116\116\105\110\103\115", Icon = "\115\101\116\116\105\110\103\115" }) } local Options = Fluent.Options local workspace = game:GetService("\087\111\114\107\115\112\097\099\101") local replicatedStorage = game:GetService("\082\101\112\108\105\099\097\116\101\100\083\116\111\114\097\103\101") local dataRemote = replicatedStorage :WaitForChild("\066\114\105\100\103\101\078\101\116") :WaitForChild("\100\097\116\097\082\101\109\111\116\101\069\118\101\110\116") local players = game:GetService("\080\108\097\121\101\114\115") local localPlayer = players.LocalPlayer local client = workspace:FindFirstChild(localPlayer.Name) local clientHRP = client.HumanoidRootPart local damageNumbers = { "\075", "\077", "\066", "\084", "\081\100", "\081\110", "\083\120", "\083\112", "\079\099", "\078" } function FindWorlds(world) local verses = workspace.Client.Maps:GetChildren() local worlds = {} for _,verse in pairs(verses) do if verse.Name == world then local worldTable = workspace.Client.Maps:FindFirstChild(verse.Name):GetChildren() for _,world in pairs(worldTable) do table.insert(worlds, world.Name) end
- end
- end
- return worlds end
- function FindVerses() local worlds = workspace.Client.Maps:GetChildren() local verses = {} for _,world in pairs(worlds) do if world.Name:match("\040\091\037\119\037\115\093\043\037\115\086\101\114\115\101\041") then table.insert(verses, world.Name) end
- end
- return verses end
- function FindEnemies() local foundEnemies = {} for i,v in pairs(workspace.Client.Enemies:GetChildren()) do if not foundEnemies[v.Name] then foundEnemies[v] = string.format("\037\115", v.Head.EnemyHUD.Main.Health.Main.Title.Text:match("\047\040\037\083\043\041\037\115\042\037\093")) end
- end
- return foundEnemies end
- function FindEnemyHealth(enemy) local health = string.format("\037\115", enemy.Head.EnemyHUD.Main.Health.Main.Title.Text:match("\037\091\037\115\042\040\037\083\043\041\037\115\042\047")) return health end
- function FindDropdownEnemies() local foundEnemies = {} for i,v in pairs(workspace.Client.Enemies:GetChildren()) do if not table.find(foundEnemies, v.Name) then table.insert(foundEnemies, v.Name) end
- end
- return foundEnemies end
- function FindEnemiesWithinRange() local playerRange = workspace.Cache.PlayerArea local touchingParts = workspace:GetPartBoundsInBox(playerRange.CFrame, playerRange.Size) local foundEnemies = {} for _, part in pairs(touchingParts) do local enemyID = part:GetAttribute("\073\068") if enemyID then foundEnemies[enemyID] = true end
- end
- return foundEnemies end
- function Click() task.wait(0.15) local args = { { { "\071\101\110\101\114\097\108", "\065\116\116\097\099\107", "\067\108\105\099\107", FindEnemiesWithinRange(), n = 0x4 }, "\092\048\048\050" } } dataRemote:FireServer(unpack(args)) end
- function Awaken() local args = { { { "\071\101\110\101\114\097\108", "\065\119\097\107\101\110\105\110\103", "\065\119\097\107\101\110", n = 0x3 }, "\092\048\048\050" } } dataRemote:FireServer(unpack(args)) end
- function OpenStar(world) local args = { { { "\071\101\110\101\114\097\108", "\083\116\097\114\115", "\079\112\101\110", world, 0xA, n = 0x5 }, "\092\048\048\050" } } dataRemote:FireServer(unpack(args)) end
- function Notify(title, content, duration) Fluent:Notify({ Title = title, Content = content, Duration = duration }) end
- function NotifyToggle(content) Fluent:Notify({ Title = "\084\111\103\103\108\101\032\067\104\097\110\103\101\100\046", Content = content, Duration = 0x1 }) end
- function printTable(table) for i,v in pairs(table) do print(i,v) end
- end
- do Tabs.Main:AddButton({ Title = "\084\101\115\116", Description = "\068\101\098\117\103\032\098\117\116\116\111\110\044\032\108\105\107\101\108\121\032\100\111\101\115\032\110\111\116\104\105\110\103\046", Callback = function () local world = "\068\114\097\103\111\110\032\086\101\114\115\101" local maps = workspace.Client.Maps:FindFirstChild(world):GetChildren() printTable(maps) end
- }) local AutoClick = Tabs.Main:AddToggle("\065\117\116\111\067\108\105\099\107", {Title = "\065\117\116\111\032\067\108\105\099\107", Default = false }) AutoClick:OnChanged( function () NotifyToggle("\065\117\116\111\032\067\108\105\099\107") task.spawn( function () while Options.AutoClick.Value == true do task.wait() Click() end
- end
- ) end
- ) local AutoAwaken = Tabs.Main:AddToggle("\065\117\116\111\065\119\097\107\101\110", {Title = "\065\117\116\111\032\065\119\097\107\101\110", Default = false }) AutoAwaken:OnChanged( function () NotifyToggle("\065\117\116\111\032\065\119\097\107\101\110") task.spawn( function () while Options.AutoAwaken.Value == true do Awaken() task.wait(0xA) end
- end
- ) end
- ) Tabs.AutoFarm:AddParagraph({ Title = "\084\117\114\110\032\111\110\032\065\117\116\111\032\067\108\105\099\107", Content = "\077\097\107\101\032\115\117\114\101\032\116\111\032\116\117\114\110\032\111\110\032\065\117\116\111\032\067\108\105\099\107\032\102\111\114\032\116\104\105\115\032\116\111\032\119\111\114\107\046\092\110\073\116\115\032\108\111\099\097\116\101\100\032\119\105\116\104\105\110\032\116\104\101\032\077\097\105\110\032\084\097\098\046" }) local EnemyDropdown = Tabs.AutoFarm:AddDropdown("\069\110\101\109\121\068\114\111\112\100\111\119\110", { Title = "\069\110\101\109\105\101\115\058", Description = "\083\101\108\101\099\116\032\101\110\101\109\105\101\115\032\102\114\111\109\032\108\105\115\116\058", Values = FindDropdownEnemies(), Multi = true, Default = {}, }) local AutoFarm = Tabs.AutoFarm:AddToggle("\065\117\116\111\070\097\114\109", {Title = "\065\117\116\111\032\070\097\114\109", Default = false }) AutoFarm:OnChanged( function () NotifyToggle("\065\117\116\111\032\070\097\114\109") task.spawn( function () while Options.AutoFarm.Value == true do task.wait() local enemies = FindEnemies() local farmingEnemies = EnemyDropdown.Value for enemy, enemyMaxHealth in pairs(enemies) do if farmingEnemies[enemy.Name] and Options.AutoFarm.Value == true then if enemy.HumanoidRootPart.CFrame then clientHRP.CFrame = enemy.HumanoidRootPart.CFrame else continue end
- repeat task.wait(1.5) clientHRP.CFrame = enemy.HumanoidRootPart.CFrame until FindEnemyHealth(enemy) == "\048" or Options.AutoFarm.Value == false end
- end
- end
- end
- ) end
- ) Tabs.AutoFarm:AddButton({ Title = "\082\101\102\114\101\115\104\032\069\110\101\109\105\101\115", Description = "\082\101\102\114\101\115\104\032\076\111\097\100\101\100\032\069\110\101\109\105\101\115", Callback = function () Notify("\082\101\102\114\101\115\104\101\100\032\069\110\101\109\105\101\115\046", "\069\110\101\109\105\101\115\032\115\117\099\099\101\115\115\102\117\108\108\121\032\114\101\102\114\101\115\104\101\100\046", 0x3) EnemyDropdown:SetValues(FindDropdownEnemies()) end
- }) local VerseDropdown = Tabs.Stars:AddDropdown("\086\101\114\115\101\068\114\111\112\100\111\119\110", { Title = "\086\101\114\115\101\115\058", Description = "\083\101\108\101\099\116\032\118\101\114\115\101\032\102\114\111\109\032\108\105\115\116\058", Values = FindVerses(), Multi = false, Default = 0x1, }) local WorldDropdown = Tabs.Stars:AddDropdown("\087\111\114\108\100\068\114\111\112\100\111\119\110", { Title = "\087\111\114\108\100\115\058", Description = "\083\101\108\101\099\116\032\119\111\114\108\100\032\102\114\111\109\032\108\105\115\116\058", Values = FindWorlds(VerseDropdown.Value), Multi = false, Default = 0x1, }) Tabs.Stars:AddButton({ Title = "\082\101\102\114\101\115\104\032\087\111\114\108\100\115", Description = "\082\101\102\114\101\115\104\032\087\111\114\108\100\032\108\105\115\116\032\098\097\115\101\100\032\111\110\032\115\101\108\101\099\116\101\100\032\086\101\114\115\101\046", Callback = function () WorldDropdown:SetValues(FindWorlds(VerseDropdown.Value)) Notify("\082\101\102\114\101\115\104\101\100\032\087\111\114\108\100\115\046", VerseDropdown.Value, 0x3) end
- }) local AutoStar = Tabs.Stars:AddToggle("\065\117\116\111\083\116\097\114", {Title = "\065\117\116\111\032\083\116\097\114", Default = false }) AutoStar:OnChanged( function () NotifyToggle("\065\117\116\111\032\083\116\097\114") task.spawn( function () while Options.AutoStar.Value == true do task.wait() OpenStar() end
- end
- ) end
- ) end
- SaveManager:SetLibrary(Fluent) InterfaceManager:SetLibrary(Fluent) SaveManager:IgnoreThemeSettings() SaveManager:SetIgnoreIndexes({}) InterfaceManager:SetFolder("\080\108\105\110\107\083\099\114\105\112\116\072\117\098") SaveManager:SetFolder("\080\108\105\110\107\083\099\114\105\112\116\072\117\098\047\119\111\114\108\100\045\102\105\103\104\116\101\114\115") InterfaceManager:BuildInterfaceSection(Tabs.Settings) SaveManager:BuildConfigSection(Tabs.Settings) Window:SelectTab(0x1) Fluent:Notify({ Title = "\080\108\105\110\107", Content = "\080\108\111\110\107\046", Duration = 0x8 }) SaveManager:LoadAutoloadConfig() end
- )(...)
+local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
+local SaveManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/SaveManager.lua"))()
+local InterfaceManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/InterfaceManager.lua"))()
+local Window = Fluent:CreateWindow({
+    Title = "Plink World Fighters v1.0.1",
+    SubTitle = "by who?",
+    TabWidth = 160,
+	Transparency = false,
+    Size = UDim2.fromOffset(580, 460),
+    Acrylic = false, -- The blur may be detectable, setting this to false disables blur entirely
+    Theme = "Dark",
+    MinimizeKey = Enum.KeyCode.LeftControl -- Used when theres no MinimizeKeybind
+})
+
+local Tabs = {
+    Main = Window:AddTab({ Title = "Main", Icon = "home" }),
+	AutoFarm = Window:AddTab({ Title = "Auto Farm", Icon = "fast-forward" }),
+	Raids = Window:AddTab({ Title = "Raids", Icon = "fast-forward" }),
+	Stars = Window:AddTab({ Title = "Stars", Icon = "fast-forward" }),
+	Gachas = Window:AddTab({ Title = "Gachas", Icon = "fast-forward" }),
+	Units = Window:AddTab({ Title = "Units / Weapons", Icon = "fast-forward" }),
+	Teleports = Window:AddTab({ Title = "Teleports", Icon = "fast-forward" }),
+    Settings = Window:AddTab({ Title = "Settings", Icon = "settings" })
+}
+
+local Options = Fluent.Options
+
+
+local workspace = game:GetService("Workspace")
+local replicatedStorage = game:GetService("ReplicatedStorage")
+local dataRemote = replicatedStorage
+    :WaitForChild("BridgeNet")
+    :WaitForChild("dataRemoteEvent")
+local players = game:GetService("Players")
+local localPlayer = players.LocalPlayer
+local client = workspace:FindFirstChild(localPlayer.Name)
+local clientHRP = client.HumanoidRootPart
+--Anti AFK
+local VirtualUser = game:GetService("VirtualUser")
+localPlayer.Idled:Connect(function()
+    VirtualUser:CaptureController()
+    VirtualUser:ClickButton2(Vector2.new())
+end)
+
+local damageNumbers = {
+	"K",
+	"M",
+	"B",
+	"T",
+	"Qd",
+	"Qn",
+	"Sx",
+	"Sp",
+	"Oc",
+	"N"
+}
+
+function OnRuntime()
+	TeleportFactory()
+	RaidPriorityFactory()
+end
+
+
+function RaidPriorityFactory()
+	local loadedModes = FindGamemodes()
+	table.sort(loadedModes, function(a,b) 
+		return a < b
+	end)
+	for _,mode in pairs(loadedModes) do
+		local modeName = string.gsub(mode, "%s+", "")
+
+		local prioritySlider = Tabs.Raids:AddSlider("RaidPriority" .. modeName, {
+        Title = mode,
+        Description = modeName,
+        Default = 0,
+        Min = 0,
+        Max = 20,
+        Rounding = 0,
+        Callback = function(Value)
+            -- print("Slider was changed:", Value)
+        end
+    	})
+	end
+end
+
+function TeleportFactory() 
+-- Teleportation Button Creation
+	Tabs.Teleports:AddParagraph({
+        Title = "Can be buggy if you spam",
+        Content = "Sometimes can cause an extra buggy click when \n trying to teleport to worlds you dont own."
+    })
+	for verse,worlds in pairs(FindVerses()) do
+		CreateTeleport(verse, worlds[1])
+		CreateTeleport(verse, worlds[2])
+	end
+end
+
+function FindGamemodes()
+	local gamemodes = workspace.Server.Enemies.Gamemodes:GetChildren()
+	local returnGamemodes = {}
+
+	for _,mode in pairs(gamemodes) do
+		table.insert(returnGamemodes, mode.Name)
+	end
+	return returnGamemodes
+end
+
+function FindWorlds() 
+	local maps = workspace.Server.Interactable:GetChildren()
+	local returnMaps = {}
+
+	for _,map in pairs(maps) do
+		if map.Name ~= "Trial" then
+			table.insert(returnMaps, map.Name)
+		end 
+	end
+	return returnMaps
+end
+
+function FindVerses()
+	local verses = workspace.Client.Maps:GetChildren()
+	local returnedVerses = {}
+
+	for _,verse in pairs(verses) do
+		if verse.Name:match("([%w%s]+%sVerse)") then
+			returnedVerses[verse.Name] = {1,2}
+		end
+	end
+	return returnedVerses
+end
+
+function FindEnemies()
+	local foundEnemies = {}
+	for i,v in pairs(workspace.Client.Enemies:GetChildren()) do
+		if not foundEnemies[v.Name] then
+			foundEnemies[v] = string.format("%s", v.Head.EnemyHUD.Main.Health.Main.Title.Text:match("/(%S+)%s*%]"))
+		end
+	end
+	return foundEnemies
+end
+
+function FindEnemyHealth(enemy)
+	local health = string.format("%s", enemy.Head.EnemyHUD.Main.Health.Main.Title.Text:match("%[%s*(%S+)%s*/"))
+	return health
+end
+
+function FindDropdownEnemies()
+	local foundEnemies = {}
+	for i,v in pairs(workspace.Client.Enemies:GetChildren()) do
+		if not table.find(foundEnemies, v.Name) then
+			table.insert(foundEnemies, v.Name)
+		end
+	end
+	return foundEnemies
+end
+
+function FindEnemiesWithinRange()
+	local playerRange = workspace.Cache.PlayerArea
+	local touchingParts = workspace:GetPartBoundsInBox(playerRange.CFrame, playerRange.Size)
+	local foundEnemies = {}
+
+	for _, part in pairs(touchingParts) do
+		local enemyID = part:GetAttribute("ID")
+
+		if enemyID then
+			foundEnemies[enemyID] = true
+		end
+	end
+	return foundEnemies
+end	
+
+
+function Click() 
+	task.wait(0.15)
+	local args = {
+	{
+		{
+			"General",
+			"Attack",
+			"Click",
+			FindEnemiesWithinRange(),
+			n = 4
+		},
+		"\002"
+	}
+}
+dataRemote:FireServer(unpack(args))
+end
+
+function Awaken()
+local args = {
+	{
+		{
+			"General",
+			"Awakening",
+			"Awaken",
+			n = 3
+		},
+		"\002"
+	}
+}
+dataRemote:FireServer(unpack(args))
+end
+
+
+function OpenStar(world) 
+local args = {
+	{
+		{
+			"General",
+			"Stars",
+			"Open",
+			world,
+			50,
+			n = 5
+		},
+		"\002"
+	}
+}
+dataRemote:FireServer(unpack(args))
+end
+
+function Teleport(verse, world)
+local args = {
+	{
+		{
+			"Player",
+			"Teleport",
+			"Teleport",
+			verse,
+			world,
+			n = 5
+		},
+		"\002"
+	}
+}
+dataRemote:FireServer(unpack(args))
+end
+
+
+function Notify(title, content, duration) 
+	Fluent:Notify({
+        Title = title,
+        Content = content,
+        Duration = duration -- Set to nil to make the notification not disappear
+    	})
+end
+
+function NotifyToggle(content) 
+	Fluent:Notify({
+        Title = "Toggle Changed.",
+        Content = content,
+        Duration = 1
+    	})
+end
+
+function printTable(table)
+	for i,v in pairs(table) do
+		print(i,v)
+	end
+end
+
+function RemoveSpaces(text)
+    local result = ""
+
+    for i = 1, #text do
+        local char = string.sub(text, i, i)
+
+        if char ~= " " then
+            result = result .. char
+        end
+    end
+
+    return result
+end
+
+
+function CreateTeleport(verse, world)
+	local cooldown = false
+	Tabs.Teleports:AddButton({
+        Title = verse,
+        Description = world,
+        Callback = function()
+			task.spawn(function() 
+				Teleport(verse, world)
+        	end)
+		end
+    })
+end
+
+function Divider(tab)
+	tab:AddParagraph({
+        Title = "------------------------------------------------------------------------------------------------",
+        Content = ""
+    })
+end
+
+
+do
+	OnRuntime()
+	Tabs.Main:AddButton({
+        Title = "Discord",
+        Description = "Join the discord for updates <3 - ",
+        Callback = function()
+		Notify("Discord link copied to clipboard.")
+			setclipboard("https://discord.gg/hJCn7UnkVZ")
+        end
+    })
+	--TESTING BUTTON
+	Tabs.Main:AddButton({
+        Title = "Test",
+        Description = "Debug button, likely does nothing.",
+        Callback = function()
+			
+        end
+    })
+
+
+	--Main Tab
+    local AutoClick = Tabs.Main:AddToggle("AutoClick", {Title = "Auto Click", Default = false })
+	AutoClick:OnChanged(function()
+        NotifyToggle("Auto Click")
+		task.spawn(function() 
+			while Options.AutoClick.Value == true do
+				task.wait()
+				Click()
+			end
+		end)
+    end)
+
+	local AutoAwaken = Tabs.Main:AddToggle("AutoAwaken", {Title = "Auto Awaken", Default = false })
+	AutoAwaken:OnChanged(function()
+        NotifyToggle("Auto Awaken")
+		task.spawn(function() 
+			while Options.AutoAwaken.Value == true do
+				Awaken()
+				task.wait(10)
+			end
+		end)
+    end)
+
+
+	--Auto Farm Tab
+	Tabs.AutoFarm:AddParagraph({
+        Title = "Make sure to turn on Auto Click",
+        Content = "Its located within the Main Tab."
+    })
+
+	local EnemyDropdown = Tabs.AutoFarm:AddDropdown("EnemyDropdown", {
+        Title = "Enemies:",
+        Description = "Select enemies from list:",
+        Values = FindDropdownEnemies(),
+        Multi = true,
+        Default = {},
+    })
+
+	local AutoFarm = Tabs.AutoFarm:AddToggle("AutoFarm", {Title = "Auto Farm", Default = false })
+	AutoFarm:OnChanged(function()
+		NotifyToggle("Auto Farm")
+		task.spawn(function()
+			while Options.AutoFarm.Value == true do
+				task.wait()
+				local enemies = FindEnemies()
+				local farmingEnemies = EnemyDropdown.Value
+
+				for enemy, enemyMaxHealth in pairs(enemies) do
+					if farmingEnemies[enemy.Name] and Options.AutoFarm.Value == true then
+						if enemy.HumanoidRootPart.CFrame then
+							clientHRP.CFrame = enemy.HumanoidRootPart.CFrame
+						else
+							continue
+						end
+						repeat 
+							task.wait(1.5)
+							clientHRP.CFrame = enemy.HumanoidRootPart.CFrame
+						until FindEnemyHealth(enemy) == "0" or Options.AutoFarm.Value == false
+					end
+				end
+			end
+		end)
+	end)
+
+	Tabs.AutoFarm:AddButton({
+        Title = "Refresh Enemies",
+        Description = "Refresh Loaded Enemies",
+        Callback = function()
+			Notify("Refreshed Enemies.", "Enemies successfully refreshed.", 3)
+			EnemyDropdown:SetValues(FindDropdownEnemies())
+        end
+    })
+
+
+	--Star Tab
+	local StarDropdown = Tabs.Stars:AddDropdown("StarDropdown", {
+        Title = "World:",
+        Description = "Select world from list:",
+        Values = FindWorlds(),
+        Multi = false,
+        Default = 1,
+    })
+
+	local AutoStar = Tabs.Stars:AddToggle("AutoStar", {Title = "Auto Star", Default = false })
+	AutoStar:OnChanged(function()
+        NotifyToggle("Auto Star")
+		task.spawn(function() 
+			while Options.AutoStar.Value == true do
+				task.wait()
+				if StarDropdown.Value then
+					OpenStar(StarDropdown.Value)
+				else
+					Notify("Please Select a world first.")
+					AutoStar:SetValue(false)
+				end
+				
+			end
+		end)
+    end)
+
+	--Raid Tab
+	Divider(Tabs.Raids)
+
+	local AutoTrialEasy = Tabs.Raids:AddToggle("AutoTrialEasy", {Title = "Auto Trial Easy", Default = false })
+	AutoTrialEasy:OnChanged(function()
+        NotifyToggle("Auto Trial Easy")
+    end)
+	local AutoTrialMedium = Tabs.Raids:AddToggle("AutoTrialMedium", {Title = "Auto Trial Medium", Default = false })
+	AutoTrialMedium:OnChanged(function()
+        NotifyToggle("Auto Trial Medium")
+    end)
+	local AutoTrialHard = Tabs.Raids:AddToggle("AutoTrialHard", {Title = "Auto Trial Hard", Default = false })
+	AutoTrialHard:OnChanged(function()
+        NotifyToggle("Auto Trial Hard")
+    end)
+	local AutoDragonDefense = Tabs.Raids:AddToggle("AutoDragonDefense", {Title = "Auto Dragon Defense", Default = false })
+	AutoDragonDefense:OnChanged(function()
+        NotifyToggle("Auto Dragon Defense")
+    end)
+	local AutoTempestInvasion = Tabs.Raids:AddToggle("AutoTempestInvasion", {Title = "Auto Tempest Invasion", Default = false })
+	AutoTempestInvasion:OnChanged(function()
+        NotifyToggle("Auto Tempest Invasion")
+    end)
+
+	Tabs.Raids:AddParagraph({
+        Title = "Auto Raid Starts ALL Raids.",
+        Content = "The Toggles below this are to toggle the script to start doing that raid based on priority."
+    })
+
+	local AutoRaid = Tabs.Raids:AddToggle("AutoRaid", {Title = "Auto Raid", Default = false })
+	AutoRaid:OnChanged(function()
+        NotifyToggle("Auto Raid")
+		task.spawn(function() 
+			local gamemodeValues = {}
+			local currentPriorityTable = {}
+
+			for _,mode in pairs(FindGamemodes()) do
+				local clean = RemoveSpaces(mode)
+				gamemodeValues[clean] = {
+
+					-- Options["Auto" .. clean], 
+					-- Options["RaidPriority" .. clean]
+				}
+
+			end
+
+
+
+			while Options.AutoRaid.Value == true do
+				task.wait()
+				-- for mode, valueTable in pairs(gamemodeValues) do
+
+				-- end
+			end
+		end)
+    end)
+
+	
+end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+-- Addons:
+-- SaveManager (Allows you to have a configuration system)
+-- InterfaceManager (Allows you to have a interface managment system)
+
+-- Hand the library over to our managers
+SaveManager:SetLibrary(Fluent)
+InterfaceManager:SetLibrary(Fluent)
+
+-- Ignore keys that are used by ThemeManager.
+-- (we dont want configs to save themes, do we?)
+SaveManager:IgnoreThemeSettings()
+
+-- You can add indexes of elements the save manager should ignore
+SaveManager:SetIgnoreIndexes({})
+
+-- use case for doing it this way:
+-- a script hub could have themes in a global folder
+-- and game configs in a separate folder per game
+InterfaceManager:SetFolder("PlinkScriptHub")
+SaveManager:SetFolder("PlinkScriptHub/world-fighters")
+
+InterfaceManager:BuildInterfaceSection(Tabs.Settings)
+SaveManager:BuildConfigSection(Tabs.Settings)
+
+
+Window:SelectTab(1)
+
+Fluent:Notify({
+    Title = "Plink",
+    Content = "Plonk.",
+    Duration = 8
+})
+
+-- You can use the SaveManager:LoadAutoloadConfig() to load a config
+-- which has been marked to be one that auto loads!
+SaveManager:LoadAutoloadConfig()
