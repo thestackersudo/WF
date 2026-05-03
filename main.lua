@@ -86,6 +86,7 @@ function AutoRaidEnemies(raid)
 end
 
 function AutoSecretBoss()
+_G.secretBoss = true
 --Fruit Verse
 Teleport("Fruits Verse", 1)
 task.wait(3)
@@ -139,6 +140,9 @@ task.wait(1)
 -- task.wait(3)
 -- TP(11639.611328125, -8.973938941955566, -23025.291015625)
 -- task.wait(3)
+_G.secretBoss = false
+task.wait(Options.SecretBossInput.Value)
+print("Wainting for:\t" .. Options.SecretBossInput.Value .. " Seconds")
 end
 
 function JoinRaid(raid)
@@ -476,16 +480,27 @@ do
 		end)
     end)
 
-	local AutoSecretBoss = Tabs.Main:AddToggle("AutoSecretBoss", {Title = "Auto Secret Boss", Default = false })
-	AutoSecretBoss:OnChanged(function()
+	local AutoSecretBossToggle = Tabs.Main:AddToggle("AutoSecretBossToggle", {Title = "Auto Secret Boss", Default = false })
+	AutoSecretBossToggle:OnChanged(function()
         NotifyToggle("Auto Secret Boss")
 		task.spawn(function() 
-			while Options.AutoSecretBoss.Value == true do
+			while Options.AutoSecretBossToggle.Value == true do
 				task.wait()
 				AutoSecretBoss()
 			end
 		end)
     end)
+
+	local SecretBossInput = Tabs.Main:AddInput("SecretBossInput", {
+        Title = "Secret Boss Wait TIme",
+        Default = "",
+        Placeholder = "Wait time in seconds.",
+        Numeric = true, -- Only allows numbers
+        Finished = false, -- Only calls callback when you press enter
+        Callback = function(Value)
+            
+        end
+    })
 
 
 	--Auto Farm Tab
@@ -506,7 +521,7 @@ do
 	AutoFarm:OnChanged(function()
 		NotifyToggle("Auto Farm")
 		task.spawn(function()
-			while Options.AutoFarm.Value == true and _G.autoFarm == true do
+			while Options.AutoFarm.Value == true and _G.secretBoss == false do
 				task.wait()
 				local enemies = FindEnemies()
 				local farmingEnemies = EnemyDropdown.Value
@@ -549,7 +564,7 @@ do
 	AutoStar:OnChanged(function()
         NotifyToggle("Auto Star")
 		task.spawn(function() 
-			while Options.AutoStar.Value == true do
+			while Options.AutoStar.Value == true and _G.secretBoss == false do
 				task.wait()
 				if Options.AutoStarTP.Value == true then
 					_G.openingStar = true
@@ -613,7 +628,7 @@ do
 	AutoRaid:OnChanged(function()
         NotifyToggle("Auto Raid")
 		task.spawn(function() 
-			while Options.AutoRaid.Value == true do
+			while Options.AutoRaid.Value == true and _G.secretBoss == false do
 				task.wait()
 				local raidPriorities = FetchRaidPriorities()
 				local currentPriorities = {}
