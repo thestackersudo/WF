@@ -1,13 +1,16 @@
 -- I fucking hate key systems
 -- https://discord.gg/hJCn7UnkVZ
-_G.autoFarm = true
-_G.openingStar = false
+
+
+
+_G.savedPosition = nil
+_G.savedWorld = {}
 
 local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
 local SaveManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/SaveManager.lua"))()
 local InterfaceManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/InterfaceManager.lua"))()
 local Window = Fluent:CreateWindow({
-    Title = "Plink World Fighters v1.0.1",
+    Title = "Plink World Fighters v1.0.2",
     SubTitle = "by who?",
     TabWidth = 160,
 	Transparency = false,
@@ -60,33 +63,7 @@ local damageNumbers = {
 	"N"
 }
 
-function OnRuntime()
-	TeleportFactory()
-	RaidPriorityFactory()
-end
-
-function AutoRaidEnemies(raid) 
-	local switch = {
-		TrialEasy = function()
-		end,
-		TrialMedium = function()
-		end,
-		TrialHard = function()
-		end,
-		DragonDefense = function()
-			local enemies = FindEnemies()
-		end,
-		TempestInvasion = function()
-		end,
-	}
-
-	if switch[raid] then
-		switch[raid]()
-	end
-end
-
 function AutoSecretBoss()
-_G.secretBoss = true
 --Fruit Verse
 Teleport("Fruits Verse", 1)
 task.wait(3)
@@ -140,9 +117,95 @@ task.wait(1)
 -- task.wait(3)
 -- TP(11639.611328125, -8.973938941955566, -23025.291015625)
 -- task.wait(3)
-_G.secretBoss = false
+
+ReturnToSaved()
 task.wait(Options.SecretBossInput.Value)
 print("Wainting for:\t" .. Options.SecretBossInput.Value .. " Seconds")
+end
+
+function OnRuntime()
+	TeleportFactory()
+	RaidPriorityFactory()
+end
+
+local ActiveTasks = {
+	Raid = false,
+	SecretBoss = false,
+	Farm = false,
+	Star = false
+}
+
+-- LAYMEN EXAMPLE: Farm cannot run if "Raid" or "SecretBoss" are active.
+local BlockRules = {
+	Farm = {"Raid", "SecretBoss"},
+	Star = {"Raid", "SecretBoss"},
+	SecretBoss = {"Raid"},
+	Raid = {}
+}
+
+function CanRun(task)
+	for _,blockedTask in pairs(BlockRules[task]) do
+		if ActiveTasks[blockedTask] then
+			return false
+		end
+	end
+	return true
+end
+
+
+
+
+
+
+
+
+
+
+
+
+
+function ReturnToSaved()
+	if _G.savedWorld[1] ~= nil and _G.savedPosition ~= nil then
+		-- print(_G.savedWorld[1], _G.savedWorld[2])
+		-- task.wait(1)
+		TP(_G.savedPosition.X, _G.savedPosition.Y, _G.savedPosition.Z)
+	else
+		Notify("World or Position not Found.", "Save a position first")
+	end
+end
+
+function AutoRaidEnemies(raid) 
+	local switch = {
+		TrialEasy = function()
+		end,
+		TrialMedium = function()
+		end,
+		TrialHard = function()
+		end,
+		DragonDefense = function()
+			while Options.AutoRaid.Value == true do
+				task.wait(20)
+				local enemies = FindEnemies()
+				local counter = 0
+				repeat
+					repeat
+						for enemy, properties in pairs(enemies) do
+							task.wait(1)
+							TP(properties[2].X,properties[2].Y,properties[2].Z)
+						end
+					until #workspace.Server.Enemies.Gamemodes["Dragon Defense"]:GetChildren() == nil or 0
+					counter = counter + 1
+				until counter > 5
+				ReturnToSaved()
+			end
+		end,
+		TempestInvasion = function()
+		end,
+	}
+
+	if switch[raid] then
+		switch[raid]()
+	end
 end
 
 function JoinRaid(raid)
@@ -160,10 +223,9 @@ function JoinRaid(raid)
 }
 game:GetService("ReplicatedStorage"):WaitForChild("BridgeNet"):WaitForChild("dataRemoteEvent"):FireServer(unpack(args))
 	repeat
-		task.wait(1)
-		print("Enemies not found.")
+		task.wait()
 	until workspace.Server.Enemies.Gamemodes[raid]:GetChildren() ~= nil
-	print("FOUND")
+	_G.isRaiding = true
 end
 
 function FetchRaidPriorities()
@@ -263,11 +325,31 @@ function FindVerses()
 	return returnedVerses
 end
 
+function FindCurrentWorld()
+	for _,world in pairs(workspace.Server.Enemies.World:GetChildren()) do
+		local maps = world:GetChildren()
+		for _,map in pairs(maps) do
+			local noMapChildren = #map:GetChildren()
+			
+			if noMapChildren > 20 then
+				local returnTable = {}
+				
+				table.insert(returnTable, world)
+				table.insert(returnTable, map)
+				return returnTable
+			end
+		end
+	end
+end
+
 function FindEnemies()
 	local foundEnemies = {}
 	for i,v in pairs(workspace.Client.Enemies:GetChildren()) do
 		if not foundEnemies[v.Name] then
-			foundEnemies[v] = string.format("%s", v.Head.EnemyHUD.Main.Health.Main.Title.Text:match("/(%S+)%s*%]"))
+			local enemyProperties = {}
+			table.insert(enemyProperties, string.format("%s", v.Head.EnemyHUD.Main.Health.Main.Title.Text:match("/(%S+)%s*%]")))
+			table.insert(enemyProperties, v.HumanoidRootPart.Position)
+			foundEnemies[v] = enemyProperties
 		end
 	end
 	return foundEnemies
@@ -378,7 +460,6 @@ function TP(x,y,z)
 	clientHRP.CFrame = CFrame.new(x,y,z)
 end
 
-
 function Notify(title, content, duration) 
 	Fluent:Notify({
         Title = title,
@@ -452,9 +533,36 @@ do
         Title = "Test",
         Description = "Debug button, likely does nothing.",
         Callback = function()
-			AutoSecretBoss()
+			task.spawn(function () 
+				ReturnToSaved()
+			end)
         end
     })
+
+	local savedPosition = Tabs.Main:AddParagraph({
+        Title = "Saved Position:",
+        Content = _G.savedPosition
+    })
+
+	local savedWorld = Tabs.Main:AddParagraph({
+        Title = "Saved World:",
+        Content = _G.savedWorld[1]
+    })
+
+	Tabs.Main:AddButton({
+        Title = "Save Position",
+        Description = "Return Position for things like Raids and Secret Boss.",
+        Callback = function()
+			_G.savedPosition = clientHRP.Position
+			_G.savedWorld = FindCurrentWorld()
+			local desc = _G.savedPosition.X .. "  " .. _G.savedPosition.Y .. "  " .. _G.savedPosition.Z
+			savedPosition:SetDesc(desc)
+			savedWorld:SetDesc(_G.savedWorld[1].Name .. " Map: " .. _G.savedWorld[2].Name)
+
+        end
+    })
+
+	
 
 
 	--Main Tab
@@ -486,7 +594,11 @@ do
 		task.spawn(function() 
 			while Options.AutoSecretBossToggle.Value == true do
 				task.wait()
+
+				if not CanRun("SecretBoss") then continue end
+				ActiveTasks.SecretBoss = true
 				AutoSecretBoss()
+				ActiveTasks.SecretBoss = false
 			end
 		end)
     end)
@@ -520,9 +632,15 @@ do
 	local AutoFarm = Tabs.AutoFarm:AddToggle("AutoFarm", {Title = "Auto Farm", Default = false })
 	AutoFarm:OnChanged(function()
 		NotifyToggle("Auto Farm")
+
 		task.spawn(function()
-			while Options.AutoFarm.Value == true and _G.secretBoss == false do
+			while Options.AutoFarm.Value == true do
 				task.wait()
+
+				if not CanRun("Farm") then continue end
+
+				ActiveTasks.Farm = true
+				
 				local enemies = FindEnemies()
 				local farmingEnemies = EnemyDropdown.Value
 
@@ -533,10 +651,13 @@ do
 						repeat 
 							task.wait(1)
 							clientHRP.CFrame = enemy.HumanoidRootPart.CFrame
-						until FindEnemyHealth(enemy) == "0" or Options.AutoFarm.Value == false or _G.openingStar == true
+						until FindEnemyHealth(enemy) == "0"
+							or not Options.AutoFarm.Value
+							or not CanRun("Farm")
 						end
 					end
 				end
+				ActiveTasks.Farm = false
 			end
 		end)
 	end)
@@ -564,22 +685,25 @@ do
 	AutoStar:OnChanged(function()
         NotifyToggle("Auto Star")
 		task.spawn(function() 
-			while Options.AutoStar.Value == true and _G.secretBoss == false do
+			while Options.AutoStar.Value == true do
 				task.wait()
+				if not CanRun("Star") then continue end
+
+				ActiveTasks.Star = true
+
 				if Options.AutoStarTP.Value == true then
-					_G.openingStar = true
 					local stars = workspace.Server.Stars
 					repeat
 						task.wait()
-					until #stars:GetChildren() == 1
+					until #stars:GetChildren() == 1 or not CanRun("Star")
 
 					local currentStar = stars:GetChildren()
 					TP(currentStar[1].Part.Position.X, currentStar[1].Part.Position.Y, currentStar[1].Part.Position.Z)
 					task.wait(0.2)
 				end
 				OpenStar(StarDropdown.Value)
-				print(_G.openingStar)
-				_G.openingStar = false
+
+				ActiveTasks.Star = false
 			end
 		end)
     end)
@@ -628,8 +752,13 @@ do
 	AutoRaid:OnChanged(function()
         NotifyToggle("Auto Raid")
 		task.spawn(function() 
-			while Options.AutoRaid.Value == true and _G.secretBoss == false do
+			while Options.AutoRaid.Value == true do
 				task.wait()
+
+				if not CanRun("Raid") then continue end
+
+				ActiveTasks.Raid = true
+
 				local raidPriorities = FetchRaidPriorities()
 				local currentPriorities = {}
 
@@ -653,6 +782,8 @@ do
 					JoinRaid(options.DisplayName)
 					AutoRaidEnemies(options.CleanName)
 				end
+
+				ActiveTasks.Raid = false
 			end
 		end)
     end)
