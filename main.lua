@@ -1,5 +1,7 @@
 -- I fucking hate key systems
 -- https://discord.gg/hJCn7UnkVZ
+_G.autoFarm = true
+_G.openingStar = false
 
 local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
 local SaveManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/SaveManager.lua"))()
@@ -63,6 +65,118 @@ function OnRuntime()
 	RaidPriorityFactory()
 end
 
+function AutoRaidEnemies(raid) 
+	local switch = {
+		TrialEasy = function()
+		end,
+		TrialMedium = function()
+		end,
+		TrialHard = function()
+		end,
+		DragonDefense = function()
+			local enemies = FindEnemies()
+		end,
+		TempestInvasion = function()
+		end,
+	}
+
+	if switch[raid] then
+		switch[raid]()
+	end
+end
+
+function AutoSecretBoss()
+--Fruit Verse
+Teleport("Fruits Verse", 1)
+task.wait(3)
+TP(6765.2353515625, 822.0428466796875, -1001.8450317382812)
+task.wait(1)
+
+Teleport("Fruits Verse", 2)
+task.wait(3)
+TP(11639.611328125, -8.973938941955566, -23025.291015625)
+task.wait(1)
+
+
+--Dragon Verse
+Teleport("Dragon Verse", 1)
+task.wait(3)
+TP(15862.4375, 803.9520263671875, -2609.734375)
+task.wait(1)
+
+Teleport("Dragon Verse", 2)
+task.wait(3)
+TP(4341.9423828125, 795.0802001953125, 4636.07373046875)
+task.wait(1)
+
+
+--Slime Verse
+Teleport("Slime Verse", 1)
+task.wait(3)
+TP(693.24755859375, 741.7731323242188, -412.68048095703125)
+task.wait(1)
+
+Teleport("Slime Verse", 2)
+task.wait(3)
+TP(573.9026489257812, 753.4492797851562, -3533.68701171875)
+task.wait(1)
+
+
+--Cursed Verse
+Teleport("Cursed Verse", 1)
+task.wait(3)
+TP(5010.60546875, 776.83056640625, -5812.2958984375)
+task.wait(1)
+
+-- Teleport("Cursed Verse", 2)
+-- task.wait(3)
+-- TP(11639.611328125, -8.973938941955566, -23025.291015625)
+-- task.wait(3)
+
+
+-- --Leveling Verse
+-- Teleport("Leveling Verse", 1)
+-- task.wait(3)
+-- TP(11639.611328125, -8.973938941955566, -23025.291015625)
+-- task.wait(3)
+end
+
+function JoinRaid(raid)
+	local args = {
+	{
+		{
+			"General",
+			"Gamemodes",
+			"Join",
+			raid,
+			n = 4
+		},
+		"\002"
+	}
+}
+game:GetService("ReplicatedStorage"):WaitForChild("BridgeNet"):WaitForChild("dataRemoteEvent"):FireServer(unpack(args))
+	repeat
+		task.wait(1)
+		print("Enemies not found.")
+	until workspace.Server.Enemies.Gamemodes[raid]:GetChildren() ~= nil
+	print("FOUND")
+end
+
+function FetchRaidPriorities()
+	local gamemodeValues = {}
+
+	for _,mode in pairs(FindGamemodes()) do
+		local clean = RemoveSpaces(mode)
+
+		gamemodeValues[clean] = {
+			Enabled = Options["Auto" .. clean].Value,
+			Priority = Options["RaidPriority" .. clean].Value,
+			DisplayName = mode,
+			CleanName = clean
+		}
+	end
+	return gamemodeValues
+end
 
 function RaidPriorityFactory()
 	local loadedModes = FindGamemodes()
@@ -72,9 +186,10 @@ function RaidPriorityFactory()
 	for _,mode in pairs(loadedModes) do
 		local modeName = string.gsub(mode, "%s+", "")
 
+
 		local prioritySlider = Tabs.Raids:AddSlider("RaidPriority" .. modeName, {
-        Title = mode,
-        Description = modeName,
+        Title = mode .. " Raid Priority",
+        Description = "",
         Default = 0,
         Min = 0,
         Max = 20,
@@ -83,6 +198,18 @@ function RaidPriorityFactory()
             -- print("Slider was changed:", Value)
         end
     	})
+		local roomSlider = Tabs.Raids:AddSlider("RaidRoom" .. modeName, {
+        Title = mode .. " Room Leave",
+        Description = "",
+        Default = 0,
+        Min = 0,
+        Max = 100,
+        Rounding = 0,
+        Callback = function(Value)
+            -- print("Slider was changed:", Value)
+        end
+    	})
+		Divider(Tabs.Raids)
 	end
 end
 
@@ -221,7 +348,10 @@ local args = {
 	}
 }
 dataRemote:FireServer(unpack(args))
+task.wait(2)
 end
+
+
 
 function Teleport(verse, world)
 local args = {
@@ -238,6 +368,10 @@ local args = {
 	}
 }
 dataRemote:FireServer(unpack(args))
+end
+
+function TP(x,y,z)
+	clientHRP.CFrame = CFrame.new(x,y,z)
 end
 
 
@@ -314,7 +448,7 @@ do
         Title = "Test",
         Description = "Debug button, likely does nothing.",
         Callback = function()
-			
+			AutoSecretBoss()
         end
     })
 
@@ -342,6 +476,17 @@ do
 		end)
     end)
 
+	local AutoSecretBoss = Tabs.Main:AddToggle("AutoSecretBoss", {Title = "Auto Secret Boss", Default = false })
+	AutoSecretBoss:OnChanged(function()
+        NotifyToggle("Auto Secret Boss")
+		task.spawn(function() 
+			while Options.AutoSecretBoss.Value == true do
+				task.wait()
+				AutoSecretBoss()
+			end
+		end)
+    end)
+
 
 	--Auto Farm Tab
 	Tabs.AutoFarm:AddParagraph({
@@ -361,7 +506,7 @@ do
 	AutoFarm:OnChanged(function()
 		NotifyToggle("Auto Farm")
 		task.spawn(function()
-			while Options.AutoFarm.Value == true do
+			while Options.AutoFarm.Value == true and _G.autoFarm == true do
 				task.wait()
 				local enemies = FindEnemies()
 				local farmingEnemies = EnemyDropdown.Value
@@ -369,14 +514,12 @@ do
 				for enemy, enemyMaxHealth in pairs(enemies) do
 					if farmingEnemies[enemy.Name] and Options.AutoFarm.Value == true then
 						if enemy.HumanoidRootPart.CFrame then
-							clientHRP.CFrame = enemy.HumanoidRootPart.CFrame
-						else
-							continue
-						end
+						
 						repeat 
-							task.wait(1.5)
+							task.wait(1)
 							clientHRP.CFrame = enemy.HumanoidRootPart.CFrame
-						until FindEnemyHealth(enemy) == "0" or Options.AutoFarm.Value == false
+						until FindEnemyHealth(enemy) == "0" or Options.AutoFarm.Value == false or _G.openingStar == true
+						end
 					end
 				end
 			end
@@ -408,19 +551,37 @@ do
 		task.spawn(function() 
 			while Options.AutoStar.Value == true do
 				task.wait()
-				if StarDropdown.Value then
-					OpenStar(StarDropdown.Value)
-				else
-					Notify("Please Select a world first.")
-					AutoStar:SetValue(false)
+				if Options.AutoStarTP.Value == true then
+					_G.openingStar = true
+					local stars = workspace.Server.Stars
+					repeat
+						task.wait()
+					until #stars:GetChildren() == 1
+
+					local currentStar = stars:GetChildren()
+					TP(currentStar[1].Part.Position.X, currentStar[1].Part.Position.Y, currentStar[1].Part.Position.Z)
+					task.wait(0.2)
 				end
-				
+				OpenStar(StarDropdown.Value)
+				print(_G.openingStar)
+				_G.openingStar = false
 			end
 		end)
     end)
 
+	Tabs.Stars:AddParagraph({
+        Title = "This will teleport you to the nearest star every 2 seconds.",
+        Content = "So make sure its selected to your current world."
+    })
+
+	local AutoStarTP = Tabs.Stars:AddToggle("AutoStarTP", {Title = "Auto Star TP", Default = false })
+	AutoStarTP:OnChanged(function()
+        NotifyToggle("Auto Star TP")
+    end)
+
+
+
 	--Raid Tab
-	Divider(Tabs.Raids)
 
 	local AutoTrialEasy = Tabs.Raids:AddToggle("AutoTrialEasy", {Title = "Auto Trial Easy", Default = false })
 	AutoTrialEasy:OnChanged(function()
@@ -445,38 +606,41 @@ do
 
 	Tabs.Raids:AddParagraph({
         Title = "Auto Raid Starts ALL Raids.",
-        Content = "The Toggles below this are to toggle the script to start doing that raid based on priority."
+        Content = "The Toggles below this are to toggle the script to start doing raids based on priority. \nPrioritises HIGHER numbers."
     })
 
 	local AutoRaid = Tabs.Raids:AddToggle("AutoRaid", {Title = "Auto Raid", Default = false })
 	AutoRaid:OnChanged(function()
         NotifyToggle("Auto Raid")
 		task.spawn(function() 
-			local gamemodeValues = {}
-			local currentPriorityTable = {}
-
-			for _,mode in pairs(FindGamemodes()) do
-				local clean = RemoveSpaces(mode)
-				gamemodeValues[clean] = {
-
-					-- Options["Auto" .. clean], 
-					-- Options["RaidPriority" .. clean]
-				}
-
-			end
-
-
-
 			while Options.AutoRaid.Value == true do
 				task.wait()
-				-- for mode, valueTable in pairs(gamemodeValues) do
+				local raidPriorities = FetchRaidPriorities()
+				local currentPriorities = {}
 
-				-- end
+				for raid,options in pairs(raidPriorities) do
+					if options.Enabled == true then
+						table.insert(currentPriorities, {
+							Name = raid,
+							Priority = options.Priority,
+							DisplayName = options.DisplayName,
+							CleanName = options.CleanName
+						})
+					end
+				end
+
+				table.sort(currentPriorities, function(a,b) 
+					return a.Priority > b.Priority
+				end)
+
+
+				for _,options in pairs(currentPriorities) do
+					JoinRaid(options.DisplayName)
+					AutoRaidEnemies(options.CleanName)
+				end
 			end
 		end)
     end)
-
-	
 end
 
 
@@ -522,7 +686,7 @@ InterfaceManager:BuildInterfaceSection(Tabs.Settings)
 SaveManager:BuildConfigSection(Tabs.Settings)
 
 
-Window:SelectTab(1)
+Window:SelectTab(3)
 
 Fluent:Notify({
     Title = "Plink",
