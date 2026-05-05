@@ -2,9 +2,7 @@ local Utils = {}
 
 Utils.Workspace = game:GetService("Workspace")
 Utils.ReplicatedStorage = game:GetService("ReplicatedStorage")
-Utils.DataRemote = replicatedStorage
-    :WaitForChild("BridgeNet")
-    :WaitForChild("dataRemoteEvent")
+Utils.WFDataRemote = Utils.ReplicatedStorage:WaitForChild("BridgeNet"):WaitForChild("dataRemoteEvent")
 Utils.Players = game:GetService("Players")
 Utils.VirtualUser = game:GetService("VirtualUser")
 
